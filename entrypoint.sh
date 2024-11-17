@@ -27,4 +27,4 @@ echo "$VPN_USERNAME : EAP \"$VPN_PASSWORD\"" >> /etc/ipsec.secrets
 
 # TODO
 # Запуск StrongSwan в отладочном режиме для тестирования
-ipsec start --nofork
+exec ipsec start --nofork
