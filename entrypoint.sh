@@ -1,5 +1,7 @@
 #!/bin/bash
 
+sed -i "s/\$VPN_DOMAIN/$VPN_DOMAIN/g" /etc/ipsec.conf
+
 # Проверка наличия сертификатов
 if [ ! -f /etc/letsencrypt/live/$VPN_DOMAIN/fullchain.pem ]; then
   certbot certonly --standalone --non-interactive --agree-tos --email "$CERTBOT_EMAIL" -d "$VPN_DOMAIN"
