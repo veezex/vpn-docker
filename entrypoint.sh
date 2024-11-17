@@ -19,8 +19,6 @@ cp /etc/letsencrypt/live/$VPN_DOMAIN/privkey.pem /etc/strongswan/certs/server-ke
 chmod 600 /etc/strongswan/certs/server-cert.pem /etc/strongswan/certs/server-key.pem
 chown root:root /etc/strongswan/certs/server-cert.pem /etc/strongswan/certs/server-key.pem
 
-ls -la /etc/strongswan/certs
-
 # Настраиваем учетные данные в ipsec.secrets
 echo ": RSA \"/etc/strongswan/certs/server-key.pem\"" > /etc/ipsec.secrets
 echo "$VPN_USERNAME : EAP \"$VPN_PASSWORD\"" >> /etc/ipsec.secrets
