@@ -22,7 +22,7 @@ chmod 600 /etc/strongswan/certs/server-cert.pem /etc/strongswan/certs/server-key
 chown root:root /etc/strongswan/certs/server-cert.pem /etc/strongswan/certs/server-key.pem
 
 # Настраиваем учетные данные в ipsec.secrets
-echo ": RSA \"/etc/strongswan/certs/server-key.pem\"" > /etc/ipsec.secrets
+echo ": ECDSA \"/etc/strongswan/certs/server-key.pem\"" > /etc/ipsec.secrets
 echo "$VPN_USERNAME : EAP \"$VPN_PASSWORD\"" >> /etc/ipsec.secrets
 
 # TODO
