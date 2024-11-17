@@ -15,4 +15,4 @@ COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["ipsec", "start", "--nofork"]
+#CMD ["ipsec", "start", "--nofork"]
