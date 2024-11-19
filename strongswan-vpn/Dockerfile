@@ -1,8 +1,7 @@
 FROM alpine:3
 
 # Установка необходимых пакетов
-RUN apk add --no-cache strongswan strongswan-libcharon strongswan-libs strongswan-extra-plugins \
-  certbot bash sed curl cronie
+RUN apk add --no-cache strongswan certbot bash sed curl cronie
 
 # Копирование конфигурации StrongSwan
 COPY ipsec.conf /etc/ipsec.conf
