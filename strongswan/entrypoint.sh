@@ -1,5 +1,7 @@
 #!/bin/bash
 
+sysctl -p
+
 sed -i "s/\$VPN_DOMAIN/$VPN_DOMAIN/g" /etc/ipsec.conf
 
 # Проверка наличия сертификатов
@@ -26,6 +28,4 @@ chown root:root /etc/strongswan/certs/server-cert.pem /etc/strongswan/certs/serv
 echo ": ECDSA \"/etc/strongswan/certs/server-key.pem\"" > /etc/ipsec.secrets
 echo "$VPN_USERNAME : EAP \"$VPN_PASSWORD\"" >> /etc/ipsec.secrets
 
-# TODO
-# Запуск StrongSwan в отладочном режиме для тестирования
 exec ipsec start --nofork
