@@ -17,8 +17,4 @@ RUN chmod +x /entrypoint.sh
 # Добавление конфигурации Squid
 COPY squid.conf /etc/squid/squid.conf
 
-# Создание пользователя и пароля для прокси
-RUN mkdir -p /etc/squid/auth && \
-  htpasswd -bc /etc/squid/auth/proxy_users ${PROXY_USER} ${PROXY_PASSWORD}
-
 ENTRYPOINT ["/entrypoint.sh"]

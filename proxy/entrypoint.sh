@@ -15,5 +15,11 @@ cp /etc/letsencrypt/live/$PROXY_DOMAIN/privkey.pem /etc/squid/ssl_cert/
 # Установка прав доступа
 chown squid:squid /etc/squid/ssl_cert/fullchain.pem /etc/squid/ssl_cert/privkey.pem
 
+# Создаем директорию для файла аутентификации
+mkdir -p /etc/squid/auth
+
+# Генерируем файл с учетными данными
+htpasswd -b -c /etc/squid/auth/proxy_users "$PROXY_USER" "$PROXY_PASSWORD"
+
 # Запуск Squid
 exec squid -N
