@@ -1,5 +1,7 @@
 #!/bin/sh
 
+sed -i "s/\$PROXY_DOMAIN/$PROXY_DOMAIN/g" /etc/squid/squid.conf
+
 # Получение SSL-сертификатов с помощью Let's Encrypt
 if [ ! -f /etc/letsencrypt/live/$VPN_DOMAIN/fullchain.pem ]; then
   certbot certonly --standalone --non-interactive --agree-tos --email "$CERTBOT_EMAIL" -d "$PROXY_DOMAIN"
@@ -20,6 +22,8 @@ mkdir -p /etc/squid/auth
 
 # Генерируем файл с учетными данными
 htpasswd -b -c /etc/squid/auth/proxy_users "$PROXY_USER" "$PROXY_PASSWORD"
+
+chown squid:squid /dev/stdout
 
 # Запуск Squid
 exec squid -N

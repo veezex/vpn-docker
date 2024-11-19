@@ -1,6 +1,6 @@
 FROM alpine:3
 
-RUN apk add --no-cache squid apache2-utils certbot openssl cronie
+RUN apk add --no-cache sed squid apache2-utils certbot openssl cronie
 
 # Создание директории для сертификатов
 RUN mkdir -p /etc/squid/ssl_cert && \
