@@ -21,6 +21,9 @@ iptables -A INPUT -p tcp --dport 22 -j ACCEPT
 # allow certbot
 iptables -A INPUT -p tcp --dport 80 -j ACCEPT
 
+# allow proxy
+iptables -A INPUT -p tcp --dport 51822 -j ACCEPT
+
 # allow loopback vpn (AWS usually use ens5 - check by "ip a")
 iptables -A INPUT -i lo -j ACCEPT
 iptables -A INPUT -p udp --dport  500 -j ACCEPT

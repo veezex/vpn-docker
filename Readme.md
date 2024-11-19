@@ -57,10 +57,58 @@ To facilitate proper network routing and firewall rules for the services, an exa
    - Ensure that ports `80` and `51822` are open and properly forwarded.
 
 4. **Set Up IPTables**:
+
    - Execute the provided script:
      ```bash
      sudo bash setup_iptables.sh
      ```
+
+## Installation Steps
+
+1. **Update System Packages**:
+
+   ```bash
+   sudo apt update && sudo apt upgrade -y
+   ```
+
+2. **Install Make**:
+
+   ```bash
+   sudo apt install make
+   ```
+
+3. **Install Docker**:
+
+   To install Docker, execute the following commands:
+
+   ```bash
+   chmod +x install_docker.sh
+   ./install_docker.sh
+   ```
+
+4. **Configure Environment Variables**:
+
+   Copy the `.env.example` file to `.env`:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Edit the `.env` file as needed to configure your setup.
+
+## Usage
+
+- **Start the Server**:
+
+  ```bash
+  make start
+  ```
+
+- **Stop the Server**:
+
+  ```bash
+  make stop
+  ```
 
 ## Notes
 
