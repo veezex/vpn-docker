@@ -1,7 +1,7 @@
 FROM alpine:3
 
 # Установка необходимых пакетов
-RUN apk add --no-cache dante-server sed
+RUN apk add --no-cache dante-server sed bash
 
 # Копируем конфигурационные файлы
 COPY sockd.conf /etc/sockd.conf
