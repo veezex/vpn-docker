@@ -1,10 +1,8 @@
 FROM debian:12
 
 RUN apt-get update && \
-  apt-get install -y iptables strongswan sed libstrongswan-standard-plugins libcharon-extra-plugins certbot cron && \
+  apt-get install -y strongswan sed libstrongswan-standard-plugins libcharon-extra-plugins certbot cron && \
   apt-get clean
-
-COPY sysctl.conf /etc/sysctl.conf
 
 COPY ipsec.conf /etc/ipsec.conf
 
