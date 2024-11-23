@@ -11,3 +11,6 @@ stop:
 
 logs:
 	docker logs -f socks-proxy-server
+
+bash:
+	docker exec -it socks-proxy-server /bin/bash

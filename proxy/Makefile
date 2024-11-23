@@ -11,3 +11,6 @@ stop:
 
 logs:
 	docker logs -f proxy-server
+
+bash:
+	docker exec -it proxy-server /bin/sh

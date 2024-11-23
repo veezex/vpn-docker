@@ -11,3 +11,6 @@ stop:
 
 logs:
 	docker logs -f strongswan-vpn
+
+bash:
+	docker exec -it strongswan-vpn /bin/bash
