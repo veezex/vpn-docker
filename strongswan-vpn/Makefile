@@ -5,3 +5,6 @@ start:
 stop:
 	docker stop strongswan-vpn
 	docker rm strongswan-vpn
+
+logs:
+	docker logs -f strongswan-vpn

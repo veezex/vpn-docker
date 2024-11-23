@@ -5,3 +5,6 @@ start:
 stop:
 	docker stop proxy-server
 	docker rm proxy-server
+
+logs:
+	docker logs -f proxy-server

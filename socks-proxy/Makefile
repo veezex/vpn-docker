@@ -5,3 +5,6 @@ start:
 stop:
 	docker stop socks-proxy-server
 	docker rm socks-proxy-server
+
+logs:
+	docker logs -f socks-proxy-server
