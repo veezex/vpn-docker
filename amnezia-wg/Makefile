@@ -3,7 +3,7 @@
 # Переменные
 IMAGE_NAME = amnezia-wg-server
 CONTAINER_NAME = awg-server
-WG_PORT = 51820
+WG_PORT = 41822
 WG_NETWORK = 10.8.0.1/24
 
 # Цвета для вывода
@@ -11,11 +11,12 @@ GREEN = \033[0;32m
 YELLOW = \033[1;33m
 NC = \033[0m # No Color
 
-.PHONY: build run stop logs shell clean server-key help
+.PHONY: build run stop logs shell clean server-key help setup-host
 
 # Помощь
 help:
 	@echo "$(GREEN)AmneziaWG Docker команды:$(NC)"
+	@echo "  $(YELLOW)make setup-host$(NC) - Настроить хост-систему (требует sudo)"
 	@echo "  $(YELLOW)make build$(NC)     - Собрать Docker образ"
 	@echo "  $(YELLOW)make run$(NC)       - Запустить контейнер (без клиентов)"
 	@echo "  $(YELLOW)make run-with-clients WG_CLIENT_KEYS='key1,key2'$(NC) - Запустить с клиентскими ключами"
@@ -25,6 +26,10 @@ help:
 	@echo "  $(YELLOW)make server-key$(NC) - Получить серверный публичный ключ"
 	@echo "  $(YELLOW)make status$(NC)    - Показать статус AmneziaWG"
 	@echo "  $(YELLOW)make clean$(NC)     - Удалить контейнер и образ"
+	@echo "  $(YELLOW)make cleanup-host$(NC) - Очистить правила хоста"
+	@echo ""
+	@echo "$(GREEN)ВАЖНО: Перед первым запуском выполните:$(NC)"
+	@echo "  $(YELLOW)sudo make setup-host$(NC)"
 	@echo ""
 	@echo "$(GREEN)Примеры:$(NC)"
 	@echo "  # Запуск с одним клиентом"
@@ -32,6 +37,27 @@ help:
 	@echo ""
 	@echo "  # Запуск с несколькими клиентами"
 	@echo "  make run-with-clients WG_CLIENT_KEYS='key1,key2,key3'"
+
+# Настройка хост-системы (требует sudo)
+setup-host:
+	@echo "$(GREEN)Настройка хост-системы для AmneziaWG...$(NC)"
+	@if [ "$$EUID" != "0" ]; then \
+		echo "$(YELLOW)Эта команда требует права root. Запустите:$(NC)"; \
+		echo "sudo make setup-host"; \
+		exit 1; \
+	fi
+	@chmod +x setup_host_for_awg.sh
+	@./setup_host_for_awg.sh
+
+# Очистка правил хоста
+cleanup-host:
+	@echo "$(GREEN)Очистка правил хоста...$(NC)"
+	@if [ "$$EUID" != "0" ]; then \
+		echo "$(YELLOW)Эта команда требует права root. Запустите:$(NC)"; \
+		echo "sudo make cleanup-host"; \
+		exit 1; \
+	fi
+	@/usr/local/bin/cleanup-awg-rules.sh 2>/dev/null || echo "Скрипт очистки не найден"
 
 # Сборка образа
 build:
@@ -42,6 +68,7 @@ build:
 run: build
 	@echo "$(GREEN)Запуск AmneziaWG сервера...$(NC)"
 	@echo "$(YELLOW)ВНИМАНИЕ: Клиентские ключи не указаны. Используйте run-with-clients для добавления клиентов.$(NC)"
+	@echo "$(YELLOW)Убедитесь, что выполнили: sudo make setup-host$(NC)"
 	docker run -d \
 		--name $(CONTAINER_NAME) \
 		--cap-add=NET_ADMIN \
@@ -61,6 +88,7 @@ run-with-clients: build
 		exit 1; \
 	fi
 	@echo "$(GREEN)Запуск AmneziaWG сервера с клиентскими ключами...$(NC)"
+	@echo "$(YELLOW)Убедитесь, что выполнили: sudo make setup-host$(NC)"
 	docker run -d \
 		--name $(CONTAINER_NAME) \
 		--cap-add=NET_ADMIN \

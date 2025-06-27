@@ -37,12 +37,12 @@ RUN wget -O awgcfg.py https://gist.githubusercontent.com/remittor/8c3d9ff293b2ba
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Открытие стандартного порта WireGuard
-EXPOSE 51820/udp
+# Открытие порта AmneziaWG
+EXPOSE 41822/udp
 
 # Переменные окружения со значениями по умолчанию
 ENV WG_INTERFACE=awg0
-ENV WG_PORT=51820
+ENV WG_PORT=41822
 ENV WG_NETWORK=10.8.0.1/24
 ENV WG_CLIENT_KEYS=""
 

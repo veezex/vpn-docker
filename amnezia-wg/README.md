@@ -2,6 +2,49 @@
 
 Docker контейнер для запуска сервера AmneziaWG (обфусцированная версия WireGuard) на базе Ubuntu 24.04.
 
+## Требования к хост-системе
+
+Для корректной работы AmneziaWG в Docker требуется:
+
+### Обязательные настройки:
+- ✅ **IP Forwarding** - для маршрутизации трафика между клиентами и интернетом
+- ✅ **iptables NAT правила** - для трансляции адресов (MASQUERADE)
+- ✅ **Открытый UDP порт** - для входящих соединений (по умолчанию 41822)
+- ✅ **Docker с привилегированными правами** - для управления сетевыми интерфейсами
+
+### Автоматическая настройка:
+Выполните команду для автоматической настройки всех требований:
+```bash
+sudo make setup-host
+```
+
+### Что настраивает скрипт:
+1. **IP Forwarding**: `net.ipv4.ip_forward=1` в `/etc/sysctl.d/99-awg-forwarding.conf`
+2. **iptables правила**:
+   - `POSTROUTING -s 10.8.0.0/24 -o <main_interface> -j MASQUERADE`
+   - `FORWARD -s 10.8.0.0/24 -j ACCEPT`
+   - `FORWARD -d 10.8.0.0/24 -j ACCEPT`
+   - `INPUT -p udp --dport 41822 -j ACCEPT`
+3. **Сохранение правил**: через `iptables-persistent`
+4. **Docker сеть**: создание bridge сети для контейнеров
+
+### Проверка настроек:
+```bash
+# Проверка IP Forwarding
+cat /proc/sys/net/ipv4/ip_forward  # должно быть 1
+
+# Проверка iptables правил
+iptables -t nat -L -n -v | grep 10.8.0
+
+# Проверка открытых портов
+ss -ulnp | grep 41822
+```
+
+### Очистка настроек:
+```bash
+sudo make cleanup-host
+```
+
 ## Особенности
 
 - ✅ Основан на Ubuntu 24.04 LTS
@@ -13,20 +56,35 @@ Docker контейнер для запуска сервера AmneziaWG (обф
 
 ## Быстрый старт
 
-### 1. Сборка и запуск без клиентов
+### 0. Настройка хост-системы (ОБЯЗАТЕЛЬНО!)
+
+Перед первым запуском необходимо настроить хост-систему для маршрутизации трафика:
+
+```bash
+sudo make setup-host
+```
+
+Этот скрипт:
+- ✅ Включает IP forwarding
+- ✅ Настраивает iptables для NAT
+- ✅ Сохраняет правила для автозапуска
+- ✅ Создает Docker сеть
+- ✅ Проверяет настройки файрвола
+
+### 2. Сборка и запуск без клиентов
 
 ```bash
 make build
 make run
 ```
 
-### 2. Получение серверного публичного ключа
+### 3. Получение серверного публичного ключа
 
 ```bash
 make server-key
 ```
 
-### 3. Запуск с клиентскими ключами
+### 4. Запуск с клиентскими ключами
 
 ```bash
 # Один клиент
@@ -40,6 +98,7 @@ make run-with-clients WG_CLIENT_KEYS='client1_key,client2_key,client3_key'
 
 ```bash
 make help           # Показать справку
+make setup-host     # Настроить хост-систему (требует sudo)
 make build          # Собрать Docker образ
 make run            # Запустить без клиентов
 make run-with-clients WG_CLIENT_KEYS='key1,key2' # Запустить с клиентами
@@ -49,6 +108,7 @@ make shell          # Войти в контейнер
 make server-key     # Получить серверный публичный ключ
 make status         # Показать статус AmneziaWG
 make clean          # Удалить контейнер и образ
+make cleanup-host   # Очистить правила хоста (требует sudo)
 make generate-client-key # Сгенерировать новый клиентский ключ
 make show-config    # Показать конфигурацию сервера
 ```
@@ -58,13 +118,16 @@ make show-config    # Показать конфигурацию сервера
 | Переменная | Описание | По умолчанию |
 |------------|----------|--------------|
 | `WG_INTERFACE` | Имя интерфейса | `awg0` |
-| `WG_PORT` | UDP порт | `51820` |
+| `WG_PORT` | UDP порт | `41822` |
 | `WG_NETWORK` | Сеть сервера | `10.8.0.1/24` |
 | `WG_CLIENT_KEYS` | Публичные ключи клиентов (через запятую) | пусто |
 
 ## Ручной запуск через Docker
 
 ```bash
+# СНАЧАЛА настройте хост-систему
+sudo ./setup_host_for_awg.sh
+
 # Сборка
 docker build -t amnezia-wg-server .
 
@@ -74,7 +137,7 @@ docker run -d \
   --cap-add=NET_ADMIN \
   --cap-add=SYS_MODULE \
   --sysctl net.ipv4.ip_forward=1 \
-  -p 51820:51820/udp \
+  -p 41822:41822/udp \
   -e WG_CLIENT_KEYS="client1_public_key,client2_public_key" \
   amnezia-wg-server
 
@@ -121,7 +184,7 @@ Address = 10.8.0.2/32
 [Peer]
 PublicKey = <серверный_публичный_ключ>
 AllowedIPs = 0.0.0.0/0
-Endpoint = <IP_сервера>:51820
+Endpoint = <IP_сервера>:41822
 PersistentKeepalive = 25
 
 # AmneziaWG специфичные параметры (получите из полной конфигурации)
@@ -155,7 +218,7 @@ make show-config
 ## Безопасность
 
 - Контейнер требует привилегированные права (`NET_ADMIN`, `SYS_MODULE`)
-- Убедитесь, что порт 51820/UDP доступен извне
+- Убедитесь, что порт 41822/UDP доступен извне
 - Храните приватные ключи в безопасности
 - Регулярно обновляйте образ для получения security-обновлений
 
