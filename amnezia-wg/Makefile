@@ -11,11 +11,12 @@ GREEN = \033[0;32m
 YELLOW = \033[1;33m
 NC = \033[0m # No Color
 
-.PHONY: build run stop logs shell clean server-key help setup-host
+.PHONY: build run stop logs shell clean server-key help setup-host check
 
 # Помощь
 help:
 	@echo "$(GREEN)AmneziaWG Docker команды:$(NC)"
+	@echo "  $(YELLOW)make check$(NC)      - Проверить совместимость системы"
 	@echo "  $(YELLOW)make setup-host$(NC) - Настроить хост-систему (требует sudo)"
 	@echo "  $(YELLOW)make build$(NC)     - Собрать Docker образ"
 	@echo "  $(YELLOW)make run$(NC)       - Запустить контейнер (без клиентов)"
@@ -27,9 +28,13 @@ help:
 	@echo "  $(YELLOW)make status$(NC)    - Показать статус AmneziaWG"
 	@echo "  $(YELLOW)make clean$(NC)     - Удалить контейнер и образ"
 	@echo "  $(YELLOW)make cleanup-host$(NC) - Очистить правила хоста"
+	@echo "  $(YELLOW)make generate-client-key$(NC) - Сгенерировать новый клиентский ключ"
+	@echo "  $(YELLOW)make show-config$(NC) - Показать конфигурацию сервера"
+	@echo "  $(YELLOW)make debug$(NC)     - Показать отладочную информацию"
 	@echo ""
 	@echo "$(GREEN)ВАЖНО: Перед первым запуском выполните:$(NC)"
-	@echo "  $(YELLOW)sudo make setup-host$(NC)"
+	@echo "  $(YELLOW)make check$(NC)      (проверка совместимости)"
+	@echo "  $(YELLOW)sudo make setup-host$(NC) (настройка хоста)"
 	@echo ""
 	@echo "$(GREEN)Примеры:$(NC)"
 	@echo "  # Запуск с одним клиентом"
@@ -37,6 +42,12 @@ help:
 	@echo ""
 	@echo "  # Запуск с несколькими клиентами"
 	@echo "  make run-with-clients WG_CLIENT_KEYS='key1,key2,key3'"
+
+# Проверка совместимости системы
+check:
+	@echo "$(GREEN)Проверка совместимости системы с AmneziaWG...$(NC)"
+	@chmod +x check_compatibility.sh
+	@./check_compatibility.sh
 
 # Настройка хост-системы (требует sudo)
 setup-host:
@@ -74,6 +85,7 @@ run: build
 		--cap-add=NET_ADMIN \
 		--cap-add=SYS_MODULE \
 		--sysctl net.ipv4.ip_forward=1 \
+		--privileged \
 		-p $(WG_PORT):$(WG_PORT)/udp \
 		-e WG_PORT=$(WG_PORT) \
 		-e WG_NETWORK=$(WG_NETWORK) \
@@ -94,13 +106,15 @@ run-with-clients: build
 		--cap-add=NET_ADMIN \
 		--cap-add=SYS_MODULE \
 		--sysctl net.ipv4.ip_forward=1 \
+		--privileged \
 		-p $(WG_PORT):$(WG_PORT)/udp \
 		-e WG_PORT=$(WG_PORT) \
 		-e WG_NETWORK=$(WG_NETWORK) \
 		-e WG_CLIENT_KEYS="$(WG_CLIENT_KEYS)" \
 		$(IMAGE_NAME)
 	@echo "$(GREEN)Контейнер запущен с клиентскими ключами.$(NC)"
-	@sleep 3
+	@echo "$(YELLOW)Ожидание запуска сервера...$(NC)"
+	@sleep 5
 	@make server-key
 
 # Остановка контейнера
@@ -120,12 +134,26 @@ shell:
 # Получение серверного публичного ключа
 server-key:
 	@echo "$(GREEN)Серверный публичный ключ:$(NC)"
-	@docker exec $(CONTAINER_NAME) get-server-key
+	@if docker ps | grep -q $(CONTAINER_NAME); then \
+		docker exec $(CONTAINER_NAME) get-server-key; \
+	else \
+		echo "$(YELLOW)Контейнер не запущен или недоступен$(NC)"; \
+		echo "$(YELLOW)Проверьте логи: make logs$(NC)"; \
+		exit 1; \
+	fi
 
 # Показать статус AmneziaWG
 status:
 	@echo "$(GREEN)Статус AmneziaWG:$(NC)"
-	@docker exec $(CONTAINER_NAME) awg show
+	@if docker ps | grep -q $(CONTAINER_NAME); then \
+		docker exec $(CONTAINER_NAME) awg show 2>/dev/null || \
+		docker exec $(CONTAINER_NAME) wg show 2>/dev/null || \
+		docker exec $(CONTAINER_NAME) ip addr show awg0 2>/dev/null || \
+		echo "$(YELLOW)Интерфейс не найден или недоступен$(NC)"; \
+	else \
+		echo "$(YELLOW)Контейнер не запущен$(NC)"; \
+		docker ps -a | grep $(CONTAINER_NAME) || echo "$(YELLOW)Контейнер не найден$(NC)"; \
+	fi
 
 # Генерация клиентского ключа
 generate-client-key:
@@ -146,4 +174,26 @@ restart: stop run-with-clients
 # Показать конфигурацию сервера
 show-config:
 	@echo "$(GREEN)Конфигурация сервера:$(NC)"
-	@docker exec $(CONTAINER_NAME) cat /etc/amnezia/amneziawg/awg0.conf
+	@if docker ps | grep -q $(CONTAINER_NAME); then \
+		docker exec $(CONTAINER_NAME) cat /etc/amnezia/amneziawg/awg0.conf 2>/dev/null || \
+		echo "$(YELLOW)Конфигурационный файл не найден$(NC)"; \
+	else \
+		echo "$(YELLOW)Контейнер не запущен$(NC)"; \
+	fi
+
+# Отладочная информация
+debug:
+	@echo "$(GREEN)=== ОТЛАДОЧНАЯ ИНФОРМАЦИЯ ===$(NC)"
+	@echo "$(YELLOW)Состояние контейнера:$(NC)"
+	@docker ps -a | grep $(CONTAINER_NAME) || echo "Контейнер не найден"
+	@echo ""
+	@echo "$(YELLOW)Последние логи:$(NC)"
+	@docker logs --tail 20 $(CONTAINER_NAME) 2>/dev/null || echo "Логи недоступны"
+	@echo ""
+	@if docker ps | grep -q $(CONTAINER_NAME); then \
+		echo "$(YELLOW)Сетевые интерфейсы в контейнере:$(NC)"; \
+		docker exec $(CONTAINER_NAME) ip addr show 2>/dev/null || echo "Недоступно"; \
+		echo ""; \
+		echo "$(YELLOW)Процессы в контейнере:$(NC)"; \
+		docker exec $(CONTAINER_NAME) ps aux 2>/dev/null || echo "Недоступно"; \
+	fi

@@ -17,12 +17,17 @@ RUN apt-get update && \
 # Включение маршрутизации IPv4
 RUN echo "net.ipv4.ip_forward = 1" > /etc/sysctl.d/00-amnezia.conf
 
-# Установка пакетов AmneziaWG
+# Установка AmneziaWG инструментов (без DKMS модуля)
 RUN add-apt-repository -y ppa:amnezia/ppa && \
     apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y amneziawg && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    amneziawg-tools \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Создание символических ссылок для совместимости
+RUN ln -sf /usr/bin/awg /usr/bin/wg 2>/dev/null || true && \
+    ln -sf /usr/bin/awg-quick /usr/bin/wg-quick 2>/dev/null || true
 
 # Установка Python модулей
 RUN pip3 install qrcode[pil] --break-system-packages
